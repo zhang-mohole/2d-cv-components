@@ -56,16 +56,20 @@ def soft_argmax_2d(features):
     N,C,H,W = features.shape
     soft_max = nn.functional.softmax(features.view(N,C,-1)*alpha,dim=2)
     soft_max = soft_max.view(features.shape)
+    print(features)
+    print(soft_max)
     indices_kernel = torch.arange(start=0,end=H*W).unsqueeze(0)
     indices_kernel = indices_kernel.view((H,W))
-    conv = soft_max*indices_kernel
+    conv = soft_max*indices_kernel.float()
     indices = conv.sum(2).sum(2)
-    y = indices%W
-    x = (indices/W).floor()%H
-    coords = torch.stack([x,y],dim=2)
+    y = indices%W + 1
+    x = (indices/W).floor()%H + 1
+    coords = torch.stack([y,x],dim=2)
     return coords
 
 if __name__ == "__main__":
-	voxel = torch.randn(1,2,2,3,3) # (batch_size, channel, H, W, depth)
-	coords = soft_argmax(voxel)
-	print(coords)
+	# voxel = torch.randn(1,2,2,3,3) # (batch_size, channel, H, W, depth)
+	# coords = soft_argmax(voxel)
+    hm = torch.randn(1,2,12,12)
+    coords = soft_argmax_2d(hm)
+    print(coords)
