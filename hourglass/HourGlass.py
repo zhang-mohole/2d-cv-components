@@ -85,6 +85,8 @@ class Net_HM_HG(nn.Module):
         self.r4 = Residual(128, 128)
         self.r5 = Residual(128, self.nFeats)
 
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+
         _hourglass, _Residual, _lin_, _tmpOut, _ll_, _tmpOut_, _reg_ = [], [], [], [], [], [], []
         for i in range(self.nStack):
             _hourglass.append(Hourglass(4, self.nModules, self.nFeats))
@@ -137,8 +139,12 @@ class Net_HM_HG(nn.Module):
                 tmpOut_ = self.tmpOut_[i](tmpOut) # 下面分支，经1x1 conv
                 x = x + ll_ + tmpOut_ # 上下分支和Res融合(三个进行点加)，送给下一个阶段
                 encoding.append(x)
+                # x_avg_pool = self.avgpool(x)
+                # encoding.append(x_avg_pool.squeeze())
             else:
                 encoding.append(ll)
+                # x_avg_pool = self.avgpool(ll)
+                # encoding.append(x_avg_pool.squeeze())
 
         return out, encoding #所有阶段的中间heatmap输出；所有阶段的featumaps
 
@@ -191,3 +197,5 @@ if __name__ == "__main__":
     net = Net_HM_HG(10)
     out, encoding = net(img)
     print(len(out),out[0].shape, len(encoding),encoding[0].shape)
+    # print(encoding[0].shape, encoding[1].shape)
+    # print(len(out),out[0].shape, len(encoding),torch.cat(encoding, dim=-1).shape)
