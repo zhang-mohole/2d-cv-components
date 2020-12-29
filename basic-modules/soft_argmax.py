@@ -63,9 +63,9 @@ def soft_argmax_2d(features):
     indices_kernel = indices_kernel.view((H,W))
     conv = soft_max*indices_kernel.float()
     indices = conv.sum(2).sum(2)
-    y = indices%W + 1
-    x = (indices/W).floor()%H + 1
-    coords = torch.stack([y,x],dim=2)
+    x = indices%W + 1
+    y = (indices/W).floor()%H + 1
+    coords = torch.stack([x,y],dim=2)
     return coords
 
 class SoftArgmax2D(nn.Module):
@@ -76,7 +76,7 @@ class SoftArgmax2D(nn.Module):
     :param return_xy: The output order is [x, y]. x for colom, y for raw
     """
 
-    def __init__(self, beta: int = 100, return_xy: bool = False):
+    def __init__(self, beta: int = 100, return_xy: bool = True):
         if not 0.0 <= beta:
             raise ValueError(f"Invalid beta: {beta}")
         super().__init__()
@@ -96,22 +96,22 @@ class SoftArgmax2D(nn.Module):
             heatmap.view(batch_size, num_channel, height * width), dim=2
         ).view(batch_size, num_channel, height, width)
 
-        xx, yy = torch.meshgrid(list(map(torch.arange, [height, width])))
+        rr, cc = torch.meshgrid(list(map(torch.arange, [height, width])))
 
-        approx_x = (
-            softmax.mul(xx.float().to(device))
+        approx_r = (
+            softmax.mul(rr.float().to(device))
                 .view(batch_size, num_channel, height * width)
                 .sum(2)
                 .unsqueeze(2)
         )
-        approx_y = (
-            softmax.mul(yy.float().to(device))
+        approx_c = (
+            softmax.mul(cc.float().to(device))
                 .view(batch_size, num_channel, height * width)
                 .sum(2)
                 .unsqueeze(2)
         )
 
-        output = [approx_x, approx_y] if self.return_xy else [approx_y, approx_x]
+        output = [approx_c, approx_r] if self.return_xy else [approx_r, approx_c]
         output = torch.cat(output, 2)
         return output
 
